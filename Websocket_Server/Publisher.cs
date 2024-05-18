@@ -9,7 +9,7 @@ namespace Websocket_Server
 {
     public partial class Publisher : Form
     {
-        private ClientWebSocket _webSocket;
+        private readonly ClientWebSocket _webSocket;
 
         public Publisher(bool isAdmin)
         {
@@ -39,17 +39,17 @@ namespace Websocket_Server
 
         private bool GetCheckBoxState(int index)
         {
-            switch (index)
+            return index switch
             {
-                case 0: return chkLED1.Checked;
-                case 1: return chkLED2.Checked;
-                case 2: return chkLED3.Checked;
-                case 3: return chkLED4.Checked;
-                case 4: return chkLED5.Checked;
-                default: return false;
-            }
+                0 => chkLED1.Checked,
+                1 => chkLED2.Checked,
+                2 => chkLED3.Checked,
+                3 => chkLED4.Checked,
+                4 => chkLED5.Checked,
+                _ => false,
+            };
         }
-        private bool[] ledStates = new bool[5];
+        private readonly bool[] ledStates = new bool[5];
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
@@ -63,22 +63,35 @@ namespace Websocket_Server
             {
                 while (true) // Run indefinitely
                 {
-                    for (int i = 0; i < 5; i++)
+                    if (!isAdmin && (chkLED1.Checked || chkLED2.Checked || chkLED3.Checked || chkLED4.Checked || chkLED5.Checked))
                     {
-                        var isChecked = GetCheckBoxState(i);
-                        var command = $"admin:adminpass:toggle {i}";
-                        if (isChecked != ledStates[i])
-                        {
-                            ledStates[i] = isChecked;
-                            var buffer = Encoding.UTF8.GetBytes(command);
-                            await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
-                            Invoke((Action)(() => lstMessages.Items.Add("Sent: " + command)));
-                        }
+                        MessageBox.Show("Only admin can control the LEDs", "Unauthorized", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Invoke((Action)(() => chkLED1.Checked = chkLED2.Checked = chkLED3.Checked = chkLED4.Checked = chkLED5.Checked = false));
                     }
-                    await Task.Delay(1000); // Delay for 1 second before sending the next set of messages
+                    else if (isAdmin)
+                    {
+
+                        for (int i = 0; i < 5; i++)
+                        {
+                            var isChecked = GetCheckBoxState(i);
+                            var command = $"admin:adminpass:toggle {i}";
+                            if (isChecked != ledStates[i])
+                            {
+                                ledStates[i] = isChecked;
+                                var buffer = Encoding.UTF8.GetBytes(command);
+                                await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                                Invoke((Action)(() => lstMessages.Items.Add("Sent: " + command)));
+                            }
+                        }
+                        await Task.Delay(1000); // Delay for 1 second before sending the next set of messages
+
+                    }
                 }
             });
         }
-
     }
 }
+
+
+
+

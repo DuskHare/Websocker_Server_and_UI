@@ -1,16 +1,12 @@
 ﻿using EasyModbus;
-using System;
 using System.Net.WebSockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Websocket_Server
 {
     public partial class Subscriber : Form
     {
-        private ClientWebSocket _webSocket;
+        private readonly ClientWebSocket _webSocket;
         private ModbusClient? modbusClient;
         public Subscriber()
         {
@@ -64,7 +60,12 @@ namespace Websocket_Server
             try
             {
                 modbusConnectionStatusLabel.Text = "MODBUS: Connected and Polling";
-                var data = modbusClient.ReadCoils(0, 5);
+                var data = modbusClient?.ReadCoils(0, 5);
+                if (data == null)
+                {
+                    modbusConnectionStatusLabel.Text = "MODBUS: Error";
+                    return;
+                }
                 for (int i = 0; i < 5; i++)
                 {
                     modbusCheckBoxes0.Checked = data[i];
@@ -82,12 +83,14 @@ namespace Websocket_Server
         }
         private void InitializeModbusClient()
         {
-            modbusClient = new ModbusClient("127.0.0.1", 502); // Adjust IP and port as necessary
-            modbusClient.ConnectionTimeout = 5000;
+            modbusClient = new ModbusClient("127.0.0.1", 502)
+            {
+                ConnectionTimeout = 5000
+            }; // Adjust IP and port as necessary
             modbusClient.Connect();
             modbusConnectionStatusLabel.Text = "MODBUS: Connected";
 
-            System.Windows.Forms.Timer modbusPollTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+            System.Windows.Forms.Timer modbusPollTimer = new() { Interval = 1000 };
             modbusPollTimer.Tick += (sender, e) => PollModbus();
             modbusPollTimer.Start();
         }

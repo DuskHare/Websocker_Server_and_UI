@@ -1,7 +1,4 @@
-﻿using System.Net;
-using System.Net.WebSockets;
-using System.Text;
-using Websocket_Server;
+﻿using Websocket_Server;
 
 namespace Websocker_Server_and_UI
 {
@@ -10,17 +7,26 @@ namespace Websocker_Server_and_UI
         [STAThread]
         public static void Main()
         {
-            Thread loginFormThread = new Thread(() =>
+            Thread loginFormThread = new(() =>
             {
-                Application.Run(new LoginForm());
+                LoginForm loginForm = new LoginForm();
+                Application.Run(loginForm);
+                if (loginForm.DialogResult == DialogResult.OK)
+                {
+                    Application.Run(new Publisher(true));
+                }
+                else if (loginForm.DialogResult == DialogResult.No)
+                {
+                    Application.Run(new Publisher(false));
+                }
             });
             loginFormThread.Start();
 
-            Thread unifiedClientFormThread = new Thread(() =>
+            Thread subscriberFormThread = new(() =>
             {
                 Application.Run(new Subscriber());
             });
-            unifiedClientFormThread.Start();
+            subscriberFormThread.Start();
         }
     }
 }

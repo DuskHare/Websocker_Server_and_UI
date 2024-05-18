@@ -15,10 +15,10 @@ class Program
     private static readonly string userPassword = "userpass";
 
     // LED states
-    private static bool[] ledStates = new bool[5];
-    private static ConcurrentDictionary<string, WebSocket> connectedClients = new ConcurrentDictionary<string, WebSocket>();
+    private static readonly bool[] ledStates = new bool[5];
+    private static readonly ConcurrentDictionary<string, WebSocket> connectedClients = new ConcurrentDictionary<string, WebSocket>();
 
-    static async Task Main(string[] args)
+    static async Task Main()
     {
         HttpListener listener = new HttpListener();
         listener.Prefixes.Add("http://localhost:5000/ws/");

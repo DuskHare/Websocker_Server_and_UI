@@ -206,7 +206,6 @@
         private CheckBox modbusCheckBoxes3;
         private CheckBox modbusCheckBoxes2;
         private CheckBox modbusCheckBoxes1;
-        private CheckBox modbusCheckBoxes;
         private CheckBox modbusCheckBoxes0;
         private Label modbusConnectionStatusLabel;
         private Label websocketstatus;
