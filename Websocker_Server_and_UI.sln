@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Websocket_Server", "..\Websocket_Server\Websocket_Server.csproj", "{35D0EF73-0FE8-4AB5-BA0D-4A59182053D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Websocket_Server", "Websocket_Server\Websocket_Server.csproj", "{2B87ED36-600B-4BEE-A987-4E63BA0DDB2F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Websocket_Server_Console", "..\Websocket_Server_Console\Websocket_Server_Console.csproj", "{6BE8CB4F-0459-4757-81EC-A8783933FFA6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Websocket_Server_Console", "Websocket_Server_Console\Websocket_Server_Console.csproj", "{942F60D3-E3F1-448A-B6FB-2A02FA4C5157}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{35D0EF73-0FE8-4AB5-BA0D-4A59182053D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{35D0EF73-0FE8-4AB5-BA0D-4A59182053D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{35D0EF73-0FE8-4AB5-BA0D-4A59182053D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{35D0EF73-0FE8-4AB5-BA0D-4A59182053D8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6BE8CB4F-0459-4757-81EC-A8783933FFA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6BE8CB4F-0459-4757-81EC-A8783933FFA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6BE8CB4F-0459-4757-81EC-A8783933FFA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6BE8CB4F-0459-4757-81EC-A8783933FFA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B87ED36-600B-4BEE-A987-4E63BA0DDB2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B87ED36-600B-4BEE-A987-4E63BA0DDB2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B87ED36-600B-4BEE-A987-4E63BA0DDB2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B87ED36-600B-4BEE-A987-4E63BA0DDB2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{942F60D3-E3F1-448A-B6FB-2A02FA4C5157}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{942F60D3-E3F1-448A-B6FB-2A02FA4C5157}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{942F60D3-E3F1-448A-B6FB-2A02FA4C5157}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{942F60D3-E3F1-448A-B6FB-2A02FA4C5157}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
