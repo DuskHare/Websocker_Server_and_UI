@@ -88,34 +88,21 @@ class Program
             var buffer = new byte[1024 * 4];
             WebSocketReceiveResult result;
 
-            // Loop until a successful connection is made
+            // Loop until the connection is closed
             while (true)
             {
-                try
+                // Receive a message from the client
+                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                // If the connection is closed, respond with a close frame
+                if (result.CloseStatus.HasValue)
                 {
-                    // Receive a message from the client
-                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-                    // If the connection is closed, throw an exception
-                    if (result.CloseStatus.HasValue)
-                    {
-                        throw new Exception("WebSocket connection closed.");
-                    }
-
-                    // Connection successful, exit the loop
-                    break;
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
+                    Trace.WriteLine($"Client {clientId} disconnected");
+                    connectedClients.TryRemove(clientId, out _);
+                    return;
                 }
-                catch (Exception ex)
-                {
-                    // Log the error and try to reconnect after 5 seconds
-                    Trace.WriteLine($"Error: {ex.Message}. Attempting to reconnect...");
-                    await Task.Delay(5000);
-                }
-            }
 
-            // Loop until the connection is closed
-            while (!result.CloseStatus.HasValue)
-            {
                 // Decode the received message
                 var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
 
@@ -128,20 +115,10 @@ class Program
                 // Encode the response and broadcast it to all connected clients
                 var responseBuffer = Encoding.UTF8.GetBytes(response);
                 await BroadcastMessage(responseBuffer);
-
                 // Log the sent message
                 Trace.WriteLine($"Sent message to client {clientId}: {response}");
 
-                // Wait for the next message
-                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             }
-
-            // Remove the client from the connected clients and close the WebSocket
-            connectedClients.TryRemove(clientId, out _);
-            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-
-            // Log the disconnection
-            Trace.WriteLine($"Client {clientId} disconnected");
         }
         catch (Exception ex)
         {
@@ -149,6 +126,7 @@ class Program
             Trace.WriteLine($"Critical error in HandleWebSocket: {ex.Message}");
         }
     }
+
 
     private static async Task BroadcastMessage(byte[] message)
     {
