@@ -89,7 +89,7 @@ class Program
             WebSocketReceiveResult result;
 
             // Loop until the connection is closed
-            while (true)
+            do
             {
                 // Receive a message from the client
                 result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
@@ -118,7 +118,7 @@ class Program
                 // Log the sent message
                 Trace.WriteLine($"Sent message to client {clientId}: {response}");
 
-            }
+            } while (!result.CloseStatus.HasValue);
         }
         catch (Exception ex)
         {
