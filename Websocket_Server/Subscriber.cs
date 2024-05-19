@@ -9,6 +9,7 @@ namespace Websocket_Server
     {
         private readonly ClientWebSocket _webSocket;
         private ModbusClient? modbusClient;
+        bool connected = true;
         public Subscriber()
         {
             InitializeComponent();
@@ -24,15 +25,23 @@ namespace Websocket_Server
             chkLED5.Enabled = false;
             _webSocket = new ClientWebSocket();
             ConnectToWebSocket();
-            Task.Run(() => InitializeModbusClient());
+            InitializeModbusClient();
         }
 
         private async void ConnectToWebSocket()
         {
-            await _webSocket.ConnectAsync(new Uri("ws://localhost:5000/ws"), CancellationToken.None);
-            Trace.WriteLine("WebSocket connected to Subscriber");
-            websocketstatus.Text = "WebSocket: Connected";
-            _ = Task.Run(ReceiveMessages);
+            try
+            {
+                await _webSocket.ConnectAsync(new Uri("ws://localhost:5000/ws"), CancellationToken.None);
+                Trace.WriteLine("WebSocket connected to Subscriber");
+                websocketstatus.Text = "WebSocket: Connected";
+                _ = Task.Run(ReceiveMessages);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"WebSocket connection error: {ex.Message}");
+                websocketstatus.Text = "WebSocket: Connection Error";
+            }
         }
 
         private async Task ReceiveMessages()
@@ -40,11 +49,19 @@ namespace Websocket_Server
             var buffer = new byte[1024 * 4];
             while (_webSocket.State == WebSocketState.Open)
             {
-                var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                UpdateLEDStates(message);
-                Trace.WriteLine($"Received message: {message}");
-                Invoke((Action)(() => lstMessages.Items.Add("Received: " + message)));
+                try
+                {
+                    var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    UpdateLEDStates(message);
+                    Trace.WriteLine($"Received message: {message}");
+                    Invoke((Action)(() => lstMessages.Items.Add("Received: " + message)));
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"WebSocket receive message error: {ex.Message}");
+                    Invoke((Action)(() => lstMessages.Items.Add("Error: " + ex.Message)));
+                }
             }
         }
 
@@ -52,7 +69,9 @@ namespace Websocket_Server
         {
             if (stateMessage.Length == 5)
             {
-                Invoke((Action)(() =>
+                try
+                {
+                    Invoke((Action)(() =>
                 {
                     chkLED1.Checked = stateMessage[0] == '1';
                     chkLED2.Checked = stateMessage[1] == '1';
@@ -60,6 +79,15 @@ namespace Websocket_Server
                     chkLED4.Checked = stateMessage[3] == '1';
                     chkLED5.Checked = stateMessage[4] == '1';
                 }));
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"Invalid LED state message: {ex.Message}");
+                }
+            }
+            else
+            {
+                Trace.WriteLine("Invalid LED state message length");
             }
         }
 
@@ -91,36 +119,29 @@ namespace Websocket_Server
         }
         private void InitializeModbusClient()
         {
-            while (true)
+            try
             {
-                try
+                modbusClient = new ModbusClient("127.0.0.1", 502)
                 {
-                    modbusClient = new ModbusClient("127.0.0.1", 502)
-                    {
-                        ConnectionTimeout = 5000
-                    }; // Adjust IP and port as necessary
-                    modbusClient.Connect();
-                    this.Invoke((MethodInvoker)delegate {
-                        modbusConnectionStatusLabel.Text = "MODBUS: Connected";
-                    });
-                    break; // Connection successful, exit the loop
-                }
-                catch (Exception ex)
-                {
-                    this.Invoke((MethodInvoker)delegate {
-                        modbusConnectionStatusLabel.Text = "MODBUS: Disconnected";
-                    });
-                    Thread.Sleep(1000);
-                    this.Invoke((MethodInvoker)delegate {
-                        modbusConnectionStatusLabel.Text = $"MODBUS: Error -\n{ex.Message}.\nAttempting to reconnect...";
-                    });
-                    Thread.Sleep(5000); // Wait for 5 seconds before trying to reconnect
-                }
+                    ConnectionTimeout = 5000
+                }; // Adjust IP and port as necessary
+                modbusClient.Connect();
+                modbusConnectionStatusLabel.Text = "MODBUS: Connected";
             }
-
-            System.Windows.Forms.Timer modbusPollTimer = new() { Interval = 1000 };
-            modbusPollTimer.Tick += (sender, e) => PollModbus();
-            modbusPollTimer.Start();
+            catch (Exception ex)
+            {
+                modbusConnectionStatusLabel.Text = "MODBUS: Disconnected";
+                Thread.Sleep(1000);
+                modbusConnectionStatusLabel.Text = $"MODBUS: Error -\n{ex.Message}.\nAttempting to reconnect...";
+                Thread.Sleep(5000); // Wait for 5 seconds before trying to reconnect
+                connected = false;
+            }
+            if (connected)
+            {
+                System.Windows.Forms.Timer modbusPollTimer = new() { Interval = 1000 };
+                modbusPollTimer.Tick += (sender, e) => PollModbus();
+                modbusPollTimer.Start();
+            }
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
         {

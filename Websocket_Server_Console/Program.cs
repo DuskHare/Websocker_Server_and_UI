@@ -21,72 +21,86 @@ class Program
 
     static async Task Main()
     {
-        Trace.Listeners.Add(new TextWriterTraceListener(new StreamWriter("logfile_server.txt", true)));
-        HttpListener listener = new HttpListener();
-        listener.Prefixes.Add("http://localhost:5000/ws/");
-        listener.Start();
-        Console.WriteLine("WebSocket server started at ws://localhost:5000/ws");
-        Trace.WriteLine("WebSocket server started at ws://localhost:5000/ws");
-
-        while (true)
+        try
         {
-            HttpListenerContext context = await listener.GetContextAsync();
-            if (context.Request.IsWebSocketRequest)
+            Trace.Listeners.Add(new TextWriterTraceListener(new StreamWriter("logfile_server.txt", true)));
+            HttpListener listener = new HttpListener();
+            listener.Prefixes.Add("http://localhost:5000/ws/");
+            listener.Start();
+            Console.WriteLine("WebSocket server started at ws://localhost:5000/ws");
+            Trace.WriteLine("WebSocket server started at ws://localhost:5000/ws");
+
+            while (true)
             {
-                HttpListenerWebSocketContext wsContext = await context.AcceptWebSocketAsync(null);
-                WebSocket webSocket = wsContext.WebSocket;
-                string clientId = Guid.NewGuid().ToString();
-                connectedClients.TryAdd(clientId, webSocket);
-                Trace.WriteLine($"Client {clientId} connected");
-                _ = HandleWebSocket(clientId, webSocket);
+                HttpListenerContext context = await listener.GetContextAsync();
+                if (context.Request.IsWebSocketRequest)
+                {
+                    HttpListenerWebSocketContext wsContext = await context.AcceptWebSocketAsync(null);
+                    WebSocket webSocket = wsContext.WebSocket;
+                    string clientId = Guid.NewGuid().ToString();
+                    connectedClients.TryAdd(clientId, webSocket);
+                    Trace.WriteLine($"Client {clientId} connected");
+                    _ = HandleWebSocket(clientId, webSocket);
+                }
+                else
+                {
+                    context.Response.StatusCode = 400;
+                    context.Response.Close();
+                }
+                Trace.Flush();
             }
-            else
-            {
-                context.Response.StatusCode = 400;
-                context.Response.Close();
-            }
-            Trace.Flush();
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Critical error in Main: {ex.Message}");
         }
 
     }
 
     private static async Task HandleWebSocket(string clientId, WebSocket webSocket)
     {
-        var buffer = new byte[1024 * 4];
-        WebSocketReceiveResult result;
-
-        while (true)
+        try
         {
-            try
+            var buffer = new byte[1024 * 4];
+            WebSocketReceiveResult result;
+
+            while (true)
             {
-                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                if (result.CloseStatus.HasValue)
+                try
                 {
-                    throw new Exception("WebSocket connection closed.");
+                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                    if (result.CloseStatus.HasValue)
+                    {
+                        throw new Exception("WebSocket connection closed.");
+                    }
+                    break; // Connection successful, exit the loop
                 }
-                break; // Connection successful, exit the loop
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"Error: {ex.Message}. Attempting to reconnect...");
+                    await Task.Delay(5000); // Wait for 5 seconds before trying to reconnect
+                }
             }
-            catch (Exception ex)
+            while (!result.CloseStatus.HasValue)
             {
-                Trace.WriteLine($"Error: {ex.Message}. Attempting to reconnect...");
-                await Task.Delay(5000); // Wait for 5 seconds before trying to reconnect
+                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                Trace.WriteLine($"Received message from client {clientId}: {message}");
+
+                var response = ProcessMessage(message);
+                var responseBuffer = Encoding.UTF8.GetBytes(response);
+                await BroadcastMessage(responseBuffer);
+                Trace.WriteLine($"Sent message to client {clientId}: {response}");
+
+                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             }
+            connectedClients.TryRemove(clientId, out _);
+            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+            Trace.WriteLine($"Client {clientId} disconnected");
         }
-        while (!result.CloseStatus.HasValue)
+        catch (Exception ex)
         {
-            var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-            Trace.WriteLine($"Received message from client {clientId}: {message}");
-
-            var response = ProcessMessage(message);
-            var responseBuffer = Encoding.UTF8.GetBytes(response);
-            await BroadcastMessage(responseBuffer);
-            Trace.WriteLine($"Sent message to client {clientId}: {response}");
-
-            result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            Trace.WriteLine($"Critical error in HandleWebSocket: {ex.Message}");
         }
-        connectedClients.TryRemove(clientId, out _);
-        await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-        Trace.WriteLine($"Client {clientId} disconnected");
     }
 
 
