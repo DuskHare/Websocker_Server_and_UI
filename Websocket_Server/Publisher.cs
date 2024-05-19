@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -22,6 +23,7 @@ namespace Websocket_Server
         private async void ConnectToWebSocket()
         {
             await _webSocket.ConnectAsync(new Uri("ws://localhost:5000/ws"), CancellationToken.None);
+            Trace.WriteLine("WebSocket connected to Publisher");
             websocketstatus.Text = "WebSocket: Connected";
             _ = Task.Run(ReceiveMessages);
         }
@@ -33,6 +35,7 @@ namespace Websocket_Server
             {
                 var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                Trace.WriteLine($"Received message: {message}");
                 Invoke((Action)(() => lstMessages.Items.Add("Received: " + message)));
             }
         }

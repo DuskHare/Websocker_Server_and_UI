@@ -157,18 +157,16 @@
             modbusConnectionStatusLabel.AutoSize = true;
             modbusConnectionStatusLabel.Location = new Point(37, 301);
             modbusConnectionStatusLabel.Name = "modbusConnectionStatusLabel";
-            modbusConnectionStatusLabel.Size = new Size(59, 25);
+            modbusConnectionStatusLabel.Size = new Size(0, 25);
             modbusConnectionStatusLabel.TabIndex = 18;
-            modbusConnectionStatusLabel.Text = "label1";
             // 
             // websocketstatus
             // 
             websocketstatus.AutoSize = true;
             websocketstatus.Location = new Point(37, 264);
             websocketstatus.Name = "websocketstatus";
-            websocketstatus.Size = new Size(59, 25);
+            websocketstatus.Size = new Size(0, 25);
             websocketstatus.TabIndex = 19;
-            websocketstatus.Text = "label1";
             // 
             // Subscriber
             // 

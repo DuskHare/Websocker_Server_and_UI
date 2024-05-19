@@ -1,4 +1,5 @@
 ﻿using EasyModbus;
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -11,6 +12,11 @@ namespace Websocket_Server
         public Subscriber()
         {
             InitializeComponent();
+            modbusCheckBoxes0.Checked = false;
+            modbusCheckBoxes1.Checked = false;
+            modbusCheckBoxes2.Checked = false;
+            modbusCheckBoxes3.Checked = false;
+            modbusCheckBoxes4.Checked = false;
             chkLED1.Enabled = false;
             chkLED2.Enabled = false;
             chkLED3.Enabled = false;
@@ -18,12 +24,13 @@ namespace Websocket_Server
             chkLED5.Enabled = false;
             _webSocket = new ClientWebSocket();
             ConnectToWebSocket();
-            InitializeModbusClient();
+            Task.Run(() => InitializeModbusClient());
         }
 
         private async void ConnectToWebSocket()
         {
             await _webSocket.ConnectAsync(new Uri("ws://localhost:5000/ws"), CancellationToken.None);
+            Trace.WriteLine("WebSocket connected to Subscriber");
             websocketstatus.Text = "WebSocket: Connected";
             _ = Task.Run(ReceiveMessages);
         }
@@ -36,6 +43,7 @@ namespace Websocket_Server
                 var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                 UpdateLEDStates(message);
+                Trace.WriteLine($"Received message: {message}");
                 Invoke((Action)(() => lstMessages.Items.Add("Received: " + message)));
             }
         }
@@ -83,12 +91,32 @@ namespace Websocket_Server
         }
         private void InitializeModbusClient()
         {
-            modbusClient = new ModbusClient("127.0.0.1", 502)
+            while (true)
             {
-                ConnectionTimeout = 5000
-            }; // Adjust IP and port as necessary
-            modbusClient.Connect();
-            modbusConnectionStatusLabel.Text = "MODBUS: Connected";
+                try
+                {
+                    modbusClient = new ModbusClient("127.0.0.1", 502)
+                    {
+                        ConnectionTimeout = 5000
+                    }; // Adjust IP and port as necessary
+                    modbusClient.Connect();
+                    this.Invoke((MethodInvoker)delegate {
+                        modbusConnectionStatusLabel.Text = "MODBUS: Connected";
+                    });
+                    break; // Connection successful, exit the loop
+                }
+                catch (Exception ex)
+                {
+                    this.Invoke((MethodInvoker)delegate {
+                        modbusConnectionStatusLabel.Text = "MODBUS: Disconnected";
+                    });
+                    Thread.Sleep(1000);
+                    this.Invoke((MethodInvoker)delegate {
+                        modbusConnectionStatusLabel.Text = $"MODBUS: Error -\n{ex.Message}.\nAttempting to reconnect...";
+                    });
+                    Thread.Sleep(5000); // Wait for 5 seconds before trying to reconnect
+                }
+            }
 
             System.Windows.Forms.Timer modbusPollTimer = new() { Interval = 1000 };
             modbusPollTimer.Tick += (sender, e) => PollModbus();

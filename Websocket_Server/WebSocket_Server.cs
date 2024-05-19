@@ -1,4 +1,5 @@
-﻿using Websocket_Server;
+﻿using System.Diagnostics;
+using Websocket_Server;
 
 namespace Websocker_Server_and_UI
 {
@@ -7,6 +8,7 @@ namespace Websocker_Server_and_UI
         [STAThread]
         public static void Main()
         {
+            Trace.Listeners.Add(new TextWriterTraceListener(new StreamWriter("logfile_ui.txt", true)));
             Thread loginFormThread = new(() =>
             {
                 LoginForm loginForm = new LoginForm();
@@ -27,6 +29,7 @@ namespace Websocker_Server_and_UI
                 Application.Run(new Subscriber());
             });
             subscriberFormThread.Start();
+            Trace.Flush();
         }
     }
 }
